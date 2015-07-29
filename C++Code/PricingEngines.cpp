@@ -141,7 +141,7 @@ void cocosPricingEngine::loadDataFromFile(string theResultsFileName) {
 
     commandLine << "LOAD DATA INFILE '/tmp/"
             << theResultsFileName
-            << "' INTO TABLE " << dataBaseName << ".CrossValidationResults"
+            << "' INTO TABLE " << cdsDataBaseName << ".CrossValidationResults"
             << " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' IGNORE 1 LINES;" << ends;
 
 
