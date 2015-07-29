@@ -41,6 +41,11 @@ public:
 
     void readInputFile(string theInputString);
 
+
+    // Database prototypes
+
+    void loadDataFromFile(string theResultsFileName);
+
 private:
 
     MYSQL dataBaseHandler;

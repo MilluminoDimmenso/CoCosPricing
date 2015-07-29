@@ -127,5 +127,30 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
     }
 
+    
+ 
 } // End readInputFile
 
+
+void cocosPricingEngine::loadDataFromFile(string theResultsFileName) {
+
+
+    ostringstream commandLine;
+
+    commandLine.seekp(0, ios::beg);
+
+    commandLine << "LOAD DATA INFILE '/tmp/"
+            << theResultsFileName
+            << "' INTO TABLE " << dataBaseName << ".CrossValidationResults"
+            << " FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' IGNORE 1 LINES;" << ends;
+
+
+    if (mysql_query(&dataBaseHandler, commandLine.str().c_str())) {
+
+        cout << mysql_error(&dataBaseHandler) << endl;
+
+        exit(0);
+
+    }
+
+} // End loadDataFromFile ( )
