@@ -41,15 +41,35 @@ public:
 
     void readInputFile(string theInputString);
 
-
+    void writeDataInCSVFormat(string gamsFileName, const Array<double, 2 > &dataMatrix);
+    
+    void writeDataForDotPlot(string gamsFileName, const Array<double, 2 > &dataMatrix);
+    
+    double pricingPlainVanillaCouponBond();
+    
+    double pricingCocosBond();
+    
     // Database prototypes
 
+    void queryInterestRates();
+    
+    void queryCdsSpreads();
+    
     void loadDataFromFile(string theResultsFileName);
 
+    double queryLookBackAverageSpread ( int recordIdAtPaymentDate );
+    
+    
 private:
 
     MYSQL dataBaseHandler;
 
+    Array<double, 2> discountFactorAtPaymentDates;
+    Array<double, 2> averageLookBackSpreadAtPaymentDates;
+    
+    double parYieldRate;
+    double cocosTriggerLevel;
+    
     string shortRateDataBaseName;
     string cdsDataBaseName;
 
@@ -64,6 +84,8 @@ private:
     int numberOfCouponPayments;
 
     int daysInAPaymentPeriods;
+    
+    int gracePeriodsInYears;
 
 }; // End cocosPricingEngine
 

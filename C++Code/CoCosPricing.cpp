@@ -31,7 +31,7 @@ using namespace blitz;
 
 int main(int argc, char** argv) {
 
-    
+
     if (argc < 2) {
 
         cout << "Usage: " << *argv << " < Run File >\n";
@@ -39,11 +39,28 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
 
     }
+
     
+    double plainVanillaBondPrice;
+    double cocosBondPrice;
     
+
     cocosPricingEngine *cocosPrice = new cocosPricingEngine [1];
-    
+
     cocosPrice->readInputFile(argv[1]);
+
+    cocosPrice->queryInterestRates();
+
+    cocosPrice->queryCdsSpreads();
+    
+    plainVanillaBondPrice = cocosPrice->pricingPlainVanillaCouponBond();
+
+    cout << "Plain vanilla bond price: " << plainVanillaBondPrice << endl;
+    
+    cocosBondPrice = cocosPrice->pricingCocosBond();
+    
+    cout << "Cocos bond price: " << cocosBondPrice << endl;
+    
     
     return ( EXIT_SUCCESS);
 }
