@@ -25,6 +25,13 @@ using namespace blitz;
 void cocosPricingEngine::readInputFile(string theInputString) {
 
 
+    MYSQL_RES *queryResult;
+
+    MYSQL_ROW currentDataBaseRow;
+
+    ostringstream commandLine;
+
+
     ifstream inputFileStream;
 
     string dataRead;
@@ -54,11 +61,11 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
             cout << "Number of scenarios: " << numberOfScenarios << endl;
 
-        } else if (dataRead == "NUMBER_OF_YEARS") {
+        } else if (dataRead == "BOND_MATURITY") {
 
-            inputFileStream >> numberOfYears;
+            inputFileStream >> bondMaturity;
 
-            cout << "Number of years: " << numberOfYears << endl;
+            cout << "Bond maturity: " << bondMaturity << endl;
 
         } else if (dataRead == "SHORT_RATE_DATABASE_NAME") {
 
@@ -99,16 +106,16 @@ void cocosPricingEngine::readInputFile(string theInputString) {
             switch (couponFrequency) {
 
                 case 1:
-                    daysInAPaymentPeriods = DAYS_IN_A_YEAR;
+                    daysBetweenPaymentPeriods = DAYS_IN_A_YEAR;
                     break;
                 case 2:
-                    daysInAPaymentPeriods = DAYS_IN_A_SEMESTER;
+                    daysBetweenPaymentPeriods = DAYS_IN_A_SEMESTER;
                     break;
                 case 4:
-                    daysInAPaymentPeriods = DAYS_IN_A_QUARTER;
+                    daysBetweenPaymentPeriods = DAYS_IN_A_QUARTER;
                     break;
                 case 12:
-                    daysInAPaymentPeriods = DAYS_IN_A_MONTH;
+                    daysBetweenPaymentPeriods = DAYS_IN_A_MONTH;
                     break;
                 default:
                     cout << "Frequency not defined" << endl;
@@ -116,22 +123,13 @@ void cocosPricingEngine::readInputFile(string theInputString) {
                     break;
             };
 
-            numberOfCouponPayments = int ( (numberOfYears * DAYS_IN_A_YEAR) / daysInAPaymentPeriods);
+            numberOfBondPayments = int ( (bondMaturity * DAYS_IN_A_YEAR) / daysBetweenPaymentPeriods);
 
-            cout << "Number of coupon payments: " << numberOfCouponPayments << endl;
+            cout << "Number of bond payments: " << numberOfBondPayments << endl;
 
         }
 
     } // End for ( ; ; )
-
-    discountFactorAtPaymentDates.resize(numberOfScenarios, numberOfCouponPayments);
-
-    averageLookBackSpreadAtPaymentDates.resize(numberOfScenarios, numberOfCouponPayments);
-
-
-    averageLookBackSpreadAtPaymentDates = -1.0;
-
-    discountFactorAtPaymentDates = -1.0;
 
     inputFileStream.close();
 
@@ -148,6 +146,53 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
     }
 
+    //
+    // The numberOfPaymentPeriods is greater or equal to
+    // the numberOfBondPayments. This is necessary to allow that
+    // the scheduled payments of the bond is shifted forward in case
+    // the COCOS is triggered.
+    //
+
+    commandLine.seekp(0, ios::beg);
+
+    commandLine << "SELECT COUNT(RecordId) FROM " << shortRateDataBaseName
+            << ".SpreadScenarios WHERE Scenario = 1;" << ends;
+
+
+    if (mysql_query(&dataBaseHandler, commandLine.str().c_str())) {
+
+        cout << mysql_error(&dataBaseHandler) << endl;
+
+        exit(0);
+
+    }
+
+    queryResult = mysql_use_result(&dataBaseHandler);
+
+    currentDataBaseRow = mysql_fetch_row(queryResult);
+
+    numberOfPaymentPeriods = int ( (atoi(*(currentDataBaseRow))) / daysBetweenPaymentPeriods);
+
+    if (numberOfPaymentPeriods <= numberOfBondPayments) {
+
+
+        cout << "Error!\nThe numberOfPaymentPeriods must be greater than numberOfBondPayments\n";
+
+        exit(0);
+
+    }
+
+
+    mysql_free_result(queryResult);
+
+
+    discountFactorAtPaymentDates.resize(numberOfScenarios, numberOfPaymentPeriods);
+
+    discountFactorAtPaymentDates = -1.0;
+
+    averageLookBackSpreadAtPaymentDates.resize(numberOfScenarios, numberOfPaymentPeriods);
+
+    averageLookBackSpreadAtPaymentDates = -1.0;
 
 
 } // End readInputFile
@@ -248,7 +293,7 @@ void cocosPricingEngine::queryInterestRates() {
 
     cout << "\n";
 
-    Array<double, 2> ZZ(5, numberOfCouponPayments);
+    Array<double, 2> ZZ(5, numberOfPaymentPeriods);
 
     firstIndex H;
     secondIndex G;
@@ -263,13 +308,13 @@ void cocosPricingEngine::queryInterestRates() {
 
     sumOfRates = 0.0;
 
-    for (i = 0; i < numberOfCouponPayments; i++) {
+    for (i = 0; i < numberOfBondPayments; i++) {
 
         sumOfRates += ZZ(0, i);
 
     }
 
-    parYieldRate = 2.0 * ((1.0 - ZZ(0, numberOfCouponPayments - 1)) / sumOfRates);
+    parYieldRate = 2.0 * ((1.0 - ZZ(0, numberOfBondPayments - 1)) / sumOfRates);
 
     cout << "Par yield rate: " << parYieldRate << endl;
 
@@ -314,7 +359,7 @@ void cocosPricingEngine::queryCdsSpreads() {
 
     numberOfRows = atoi(*(currentDataBaseRow));
 
-    recordIdAtPaymentDates.resize(numberOfCouponPayments);
+    recordIdAtPaymentDates.resize(numberOfBondPayments);
     greaterThanThreshold.resize(numberOfScenarios);
 
     mysql_free_result(queryResult);
@@ -331,7 +376,7 @@ void cocosPricingEngine::queryCdsSpreads() {
 
         commandLine << "SELECT RecordId FROM " << cdsDataBaseName
                 << ".SpreadScenarios WHERE RecordId >= " << recordIdLower << " AND RecordId <= "
-                << recordIdUpper << " AND Time MOD " << daysInAPaymentPeriods << " = 0;" << ends;
+                << recordIdUpper << " AND Time MOD " << daysBetweenPaymentPeriods << " = 0;" << ends;
 
 
         if (mysql_query(&dataBaseHandler, commandLine.str().c_str())) {
@@ -355,7 +400,7 @@ void cocosPricingEngine::queryCdsSpreads() {
 
             j++;
 
-            if (j == numberOfCouponPayments) break;
+            if (j == numberOfBondPayments) break;
 
         } // End while ( .... )
 
@@ -367,7 +412,7 @@ void cocosPricingEngine::queryCdsSpreads() {
 
         k = 0;
 
-        for (j = 0; j < numberOfCouponPayments; j++) {
+        for (j = 0; j < numberOfBondPayments; j++) {
 
             averageLookBackSpreadAtPaymentDates(i, j) = this->queryLookBackAverageSpread(recordIdAtPaymentDates(j));
 
@@ -380,10 +425,6 @@ void cocosPricingEngine::queryCdsSpreads() {
 
     cout << "\n";
 
-    cout << "Cocos trigger dates:\n";
-
-    cout.flush() << greaterThanThreshold << endl;
-
     this->writeDataForDotPlot("/tmp/CocosTriggeringTime.csv", averageLookBackSpreadAtPaymentDates);
 
 } // End queryInterestRates
@@ -394,7 +435,11 @@ double cocosPricingEngine::pricingCocosBond() {
     double bondPrice;
     double scenarioBondPrice;
 
-    int flagCocosTriggered;
+    int cocosGracePeriodCounter;
+
+    int flagCocosHitOnce;
+
+    int maturityShift;
 
     int i, j;
 
@@ -404,19 +449,39 @@ double cocosPricingEngine::pricingCocosBond() {
 
         scenarioBondPrice = 0.0;
 
-        for (j = 0; j < numberOfCouponPayments; j++) {
+        flagCocosHitOnce = 0;
 
+        maturityShift = 0;
+
+        cocosGracePeriodCounter = 0;
+
+        for (j = 0; j < (numberOfBondPayments + maturityShift); j++) {
 
             if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel) {
 
-                flagCocosTriggered = 6;
+                cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
 
-            }
+                if (!flagCocosHitOnce) {
 
+                    flagCocosHitOnce = 1;
 
-            if (flagCocosTriggered > 0) {
+                    maturityShift += (gracePeriodsInYears * couponFrequency);
+                    
+                    if ( maturityShift > 20 ) maturityShift = 20;
 
-                flagCocosTriggered--;
+                } else {
+
+                    maturityShift += (couponFrequency);
+
+                    if ( maturityShift > 20 ) maturityShift = 20;
+                    
+                }
+
+            } // End if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel)
+
+            if (cocosGracePeriodCounter > 0) {
+
+                cocosGracePeriodCounter--;
 
             } else {
 
@@ -424,13 +489,10 @@ double cocosPricingEngine::pricingCocosBond() {
 
             }
 
-        } // for (j = 0; j < numberOfCouponPayments; j++)
+        } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
 
-        if (flagCocosTriggered <= 0) {
 
-            scenarioBondPrice += (discountFactorAtPaymentDates(i, numberOfCouponPayments - 1));
-
-        }
+        scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1));
 
         bondPrice += scenarioBondPrice;
 
@@ -458,13 +520,13 @@ double cocosPricingEngine::pricingPlainVanillaCouponBond() {
 
         scenarioBondPrice = 0.0;
 
-        for (j = 0; j < numberOfCouponPayments; j++) {
+        for (j = 0; j < numberOfBondPayments; j++) {
 
             scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
 
-        } // for (j = 0; j < numberOfCouponPayments; j++)
+        } // for (j = 0; j < numberOfBondPayments; j++)
 
-        scenarioBondPrice += (discountFactorAtPaymentDates(i, numberOfCouponPayments - 1));
+        scenarioBondPrice += (discountFactorAtPaymentDates(i, numberOfBondPayments - 1));
 
 
         bondPrice += scenarioBondPrice;
@@ -608,7 +670,7 @@ void cocosPricingEngine::writeDataForDotPlot(string gamsFileName, const Array<do
     }
 
     outputFileStream << "Scenario,CocosEvent,Type\n";
-    
+
     for (i = 0; i < dataMatrix.rows(); i++) {
 
         timeIndex = 0.5;
@@ -617,17 +679,17 @@ void cocosPricingEngine::writeDataForDotPlot(string gamsFileName, const Array<do
 
             if (dataMatrix(i, j) >= cocosTriggerLevel) {
 
-                
-                if ( timeIndex >= (numberOfYears - gracePeriodsInYears) ) {
-                    
+
+                if (timeIndex >= (bondMaturity - gracePeriodsInYears)) {
+
                     outputFileStream << (i + 1) << "," << timeIndex << ",2" << endl;
-                    
+
                 } else {
-                
-                        outputFileStream << (i + 1) << "," << timeIndex << ",1" << endl;
-                
-                }                
-                                
+
+                    outputFileStream << (i + 1) << "," << timeIndex << ",1" << endl;
+
+                }
+
             }
 
             timeIndex += 0.5;

@@ -969,3 +969,16 @@ xyplot(AVG~Time,type="l",data=SimulatedTermStructure)
 xyplot(AVG+C1+C2~Time,type="l",data=DD)
 xyplot(AVG+C1+C2+C3~Time,type="l",data=DD)
 xyplot(AVG+C1+C2+C3+C4~Time,type="l",data=DD)
+
+%%%%%%%%%%%%%%%%%%%%% Trigger Experiment %%%%%%%%%%%%%%%%%%%%
+
+require(lattice)
+
+barchart(COCOS.Price~factor(Trigger.Level),data=TriggerExperiment,horizontal=FALSE,xlab="Trigger Level", ylab="COCOS Price")
+
+DD <- TriggerExperiment
+DD$COCOS.Price <- (100-DD$COCOS.Price)
+
+barchart(COCOS.Price~factor(Trigger.Level),data=DD,
+         horizontal=FALSE,xlab="Trigger Level", ylab="Discount (in bp)", origin=0)
+

@@ -75,17 +75,20 @@ private:
 
     int numberOfScenarios;
 
-    int numberOfYears;
+    int bondMaturity;
 
     int spreadLookBackDays;
 
     int couponFrequency;
 
-    int numberOfCouponPayments;
+    int numberOfBondPayments;
 
-    int daysInAPaymentPeriods;
+    int numberOfPaymentPeriods;
+    
+    int daysBetweenPaymentPeriods;
     
     int gracePeriodsInYears;
+    
 
 }; // End cocosPricingEngine
 
