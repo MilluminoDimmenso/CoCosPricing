@@ -974,11 +974,11 @@ xyplot(AVG+C1+C2+C3+C4~Time,type="l",data=DD)
 
 require(lattice)
 
-barchart(COCOS.Price~factor(Trigger.Level),data=TriggerExperiment,horizontal=FALSE,xlab="Trigger Level", ylab="COCOS Price")
+barchart(CoCos.Price~factor(Trigger.Level),group=Shift.Period,data=AA,
+         auto.key=list(columns=5,title="Shift Periods",points = FALSE, rectangles=TRUE, 
+                       cex.title=1.0,border=FALSE,padding.text=2, adj=1),
+         horizontal=FALSE,xlab="Trigger Levels", 
+         ylab="Discount (in points)", origin=0,)
 
-DD <- TriggerExperiment
-DD$COCOS.Price <- (100-DD$COCOS.Price)
-
-barchart(COCOS.Price~factor(Trigger.Level),data=DD,
-         horizontal=FALSE,xlab="Trigger Level", ylab="Discount (in bp)", origin=0)
-
+barchart(CoCos.Price~factor(Trigger.Level)|factor(Shift.Period),data=AA,
+         horizontal=FALSE,xlab="Trigger Levels", ylab="Discount (in points)", origin=0)

@@ -32,6 +32,9 @@ using namespace blitz;
 int main(int argc, char** argv) {
 
 
+    ofstream outputFileStream;
+
+
     if (argc < 2) {
 
         cout << "Usage: " << *argv << " < Run File >\n";
@@ -40,10 +43,10 @@ int main(int argc, char** argv) {
 
     }
 
-    
+
     double plainVanillaBondPrice;
     double cocosBondPrice;
-    
+
 
     cocosPricingEngine *cocosPrice = new cocosPricingEngine [1];
 
@@ -52,16 +55,31 @@ int main(int argc, char** argv) {
     cocosPrice->queryInterestRates();
 
     cocosPrice->queryCdsSpreads();
-    
+
     plainVanillaBondPrice = cocosPrice->pricingPlainVanillaCouponBond();
 
-    cout << "Plain vanilla bond price: " << plainVanillaBondPrice << endl;
-    
+    cout.flush() << "Plain vanilla bond price: " << plainVanillaBondPrice << endl;
+
     cocosBondPrice = cocosPrice->pricingCocosBond();
-    
-    cout << "Cocos bond price: " << cocosBondPrice << endl;
-    
-    
+
+    cout.flush() << "Cocos bond price: " << cocosBondPrice << endl;
+
+
+    outputFileStream.open("/tmp/CurrentCoCosResults.csv");
+
+    if (!outputFileStream) {
+
+        cout << "Couldn't open file /tmp/CurrentCoCosResults.csv\n";
+        exit(0);
+
+    }
+
+    outputFileStream << cocosPrice->getTriggerLevel() << "," << cocosPrice->getGracePeriodsInYears()
+            << "," << cocosPrice->getBurnInPeriodsInYears() << "," << cocosBondPrice << endl;
+
+    outputFileStream.close();
+
+
     return ( EXIT_SUCCESS);
 }
 

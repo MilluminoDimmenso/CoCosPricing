@@ -39,6 +39,24 @@ public:
     };
 
 
+    inline double getTriggerLevel () {
+        
+        return cocosTriggerLevel;
+        
+    }
+    
+    inline int getGracePeriodsInYears () {
+        
+        return gracePeriodsInYears;
+        
+    }
+    
+    inline int getBurnInPeriodsInYears () {
+        
+        return burnInPeriodsInYears;
+        
+    }
+    
     void readInputFile(string theInputString);
 
     void writeDataInCSVFormat(string gamsFileName, const Array<double, 2 > &dataMatrix);
@@ -89,6 +107,7 @@ private:
     
     int gracePeriodsInYears;
     
+    int burnInPeriodsInYears;
 
 }; // End cocosPricingEngine
 

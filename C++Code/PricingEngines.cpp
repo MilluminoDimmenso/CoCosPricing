@@ -97,6 +97,12 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
             cout << "Grace period (in years) : " << gracePeriodsInYears << endl;
 
+        } else if (dataRead == "BURN_IN_PERIODS_IN_YEARS") {
+
+            inputFileStream >> burnInPeriodsInYears;
+
+            cout << "Burn-in periods (in years) : " << burnInPeriodsInYears << endl;
+
         } else if (dataRead == "COUPON_FREQUENCY") {
 
             inputFileStream >> couponFrequency;
@@ -173,13 +179,13 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
     numberOfPaymentPeriods = int ( (atoi(*(currentDataBaseRow))) / daysBetweenPaymentPeriods);
 
-    if (numberOfPaymentPeriods <= numberOfBondPayments) {
+    numberOfPaymentPeriods -= (burnInPeriodsInYears * couponFrequency);
 
+    if (numberOfPaymentPeriods <= numberOfBondPayments) {
 
         cout << "Error!\nThe numberOfPaymentPeriods must be greater than numberOfBondPayments\n";
 
         exit(0);
-
     }
 
 
@@ -210,6 +216,8 @@ void cocosPricingEngine::queryInterestRates() {
     double recordIdUpper, recordIdLower;
 
     int numberOfRows;
+
+    int burnInCounter;
 
     int i, j, k;
 
@@ -267,7 +275,18 @@ void cocosPricingEngine::queryInterestRates() {
 
         sumOfRates = 0.0;
 
+        burnInCounter = (burnInPeriodsInYears * DAYS_IN_A_YEAR);
+
         while ((currentDataBaseRow = mysql_fetch_row(queryResult))) {
+
+            if (burnInCounter > 0) {
+
+                burnInCounter--;
+
+                continue;
+
+            }
+
 
             sumOfRates += (atof(*(currentDataBaseRow)) / (100 * DAYS_IN_A_YEAR));
 
@@ -336,6 +355,8 @@ void cocosPricingEngine::queryCdsSpreads() {
 
     int numberOfRows;
 
+    int burnInCounter;
+
     int i, j, k;
 
 
@@ -393,8 +414,17 @@ void cocosPricingEngine::queryCdsSpreads() {
 
         recordIdAtPaymentDates = -1;
 
+        burnInCounter = (burnInPeriodsInYears * couponFrequency);
 
         while ((currentDataBaseRow = mysql_fetch_row(queryResult))) {
+
+            if (burnInCounter > 0) {
+
+                burnInCounter--;
+
+                continue;
+                
+            }
 
             recordIdAtPaymentDates(j) = atof(*(currentDataBaseRow));
 
@@ -466,15 +496,17 @@ double cocosPricingEngine::pricingCocosBond() {
                     flagCocosHitOnce = 1;
 
                     maturityShift += (gracePeriodsInYears * couponFrequency);
-                    
-                    if ( maturityShift > 20 ) maturityShift = 20;
+
+                    if (maturityShift > 20) maturityShift = 20;
 
                 } else {
 
-                    maturityShift += (couponFrequency);
+                    // maturityShift += (couponFrequency);
 
-                    if ( maturityShift > 20 ) maturityShift = 20;
-                    
+                    maturityShift += 0;
+
+                    if (maturityShift > 20) maturityShift = 20;
+
                 }
 
             } // End if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel)
@@ -490,7 +522,6 @@ double cocosPricingEngine::pricingCocosBond() {
             }
 
         } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
-
 
         scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1));
 
