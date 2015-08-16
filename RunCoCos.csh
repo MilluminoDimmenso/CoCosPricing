@@ -15,7 +15,7 @@ echo "Trigger Level,Shift Period,Burn In,CoCos Price" > /tmp/CoCosExperiments.cs
 
 foreach burnIn ( 0 5 )
 
-    foreach triggerLevel ( 200 300 400 500 600 700 )
+    foreach triggerLevel ( 200 300 400 500 600 )
 
         foreach shiftPeriods ( 1 3 5 8 10 )
 
