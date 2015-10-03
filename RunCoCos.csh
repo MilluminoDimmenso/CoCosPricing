@@ -13,9 +13,9 @@ endif
 
 echo "Trigger Level,Shift Period,Burn In,Standstill Percentage,CoCos Price" > /tmp/CoCosExperiments.csv
 
-foreach burnIn ( 0 5 )
+foreach burnIn ( 0 )
 
-  foreach standStill ( 0.0 0.25 0.5 )
+  foreach standStill ( 0.0 )
 
     foreach triggerLevel ( 200 300 400 500 600 )
 
