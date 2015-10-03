@@ -13,22 +13,22 @@ endif
 
 echo "Trigger Level,Shift Period,Burn In,Standstill Percentage,CoCos Price" > /tmp/CoCosExperiments.csv
 
-foreach burnIn ( 0 5 )
+foreach burnIn ( 0 )
 
-  foreach standStill ( 0.0 0.25 0.5 )
+  foreach standStill ( 0.0 )
 
-    foreach triggerLevel ( 200 300 400 500 600 )
+    foreach triggerLevel ( 400 )
 
-        foreach shiftPeriods ( 1 3 5 8 10 )
+        foreach shiftPeriods ( 3 )
 
             echo "NUMBER_OF_SCENARIOS" > InFiles/InputFileCurrentRun.in
             echo "1000" >> InFiles/InputFileCurrentRun.in
             echo "BOND_MATURITY" >> InFiles/InputFileCurrentRun.in
             echo "20" >> InFiles/InputFileCurrentRun.in
             echo "SHORT_RATE_DATABASE_NAME" >> InFiles/InputFileCurrentRun.in
-            echo "COCOS_RATES_NOJUMPS" >> InFiles/InputFileCurrentRun.in
+            echo "COCOS_RATES" >> InFiles/InputFileCurrentRun.in
             echo "CDS_DATABASE_NAME" >> InFiles/InputFileCurrentRun.in
-            echo "COCOS_NOJUMPS" >> InFiles/InputFileCurrentRun.in
+            echo "COCOS" >> InFiles/InputFileCurrentRun.in
             echo "SPREAD_LOOK_BACK_DAYS" >> InFiles/InputFileCurrentRun.in
             echo "30" >> InFiles/InputFileCurrentRun.in
             echo "COCOS_TRIGGER_LEVEL" >> InFiles/InputFileCurrentRun.in

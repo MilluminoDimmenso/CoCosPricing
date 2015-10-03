@@ -970,26 +970,3 @@ xyplot(AVG+C1+C2~Time,type="l",data=DD)
 xyplot(AVG+C1+C2+C3~Time,type="l",data=DD)
 xyplot(AVG+C1+C2+C3+C4~Time,type="l",data=DD)
 
-%%%%%%%%%%%%%%%%%%%%% Trigger Experiment %%%%%%%%%%%%%%%%%%%%
-
-require(lattice)
-
-AA <- CoCosExperiments
-
-AA$CoCos.Price <- (1.0 - AA$CoCos.Price)*100
-
-barchart(CoCos.Price~factor(Trigger.Level),group=Shift.Period,data=AA,
-         auto.key=list(columns=5,title="Shift Periods",points = FALSE, rectangles=TRUE, 
-                       cex.title=1.0,border=FALSE,padding.text=2, adj=1),
-         horizontal=FALSE,xlab="Trigger Levels", 
-         ylab="Discount (in points)", origin=0,)
-
-barchart(CoCos.Price~factor(Trigger.Level)|factor(Shift.Period),data=AA,
-         horizontal=FALSE,xlab="Trigger Levels", ylab="Discount (in points)", origin=0)
-
-
-barchart(CoCos.Price~factor(Trigger.Level)|factor(Burn.In),group=Shift.Period,data=AA,
-         auto.key=list(columns=5,title="Shift Periods",points = FALSE, rectangles=TRUE, 
-                       cex.title=1.0,border=FALSE,padding.text=2, adj=1),
-         horizontal=FALSE,xlab="Trigger Levels", 
-         ylab="Discount (in points)", origin=0,)

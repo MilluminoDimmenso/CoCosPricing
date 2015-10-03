@@ -103,6 +103,12 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
             cout << "Burn-in periods (in years) : " << burnInPeriodsInYears << endl;
 
+        } else if (dataRead == "STANDSTILL_PERCENTAGE") {
+            
+            inputFileStream >> standStillPercentage;
+
+            cout << "Percentage of nominal paid during standstill : " << standStillPercentage << endl;            
+            
         } else if (dataRead == "COUPON_FREQUENCY") {
 
             inputFileStream >> couponFrequency;
@@ -423,7 +429,7 @@ void cocosPricingEngine::queryCdsSpreads() {
                 burnInCounter--;
 
                 continue;
-                
+
             }
 
             recordIdAtPaymentDates(j) = atof(*(currentDataBaseRow));
@@ -501,9 +507,9 @@ double cocosPricingEngine::pricingCocosBond() {
 
                 } else {
 
-                    // maturityShift += (couponFrequency);
+                    maturityShift += (couponFrequency);
 
-                    maturityShift += 0;
+                    // maturityShift += 0;
 
                     if (maturityShift > 20) maturityShift = 20;
 
@@ -515,9 +521,25 @@ double cocosPricingEngine::pricingCocosBond() {
 
                 cocosGracePeriodCounter--;
 
+                // During the standstill keep paying standStillPercentage of the nominal 
+
+                scenarioBondPrice += (((standStillPercentage * parYieldRate) / 2.0) * discountFactorAtPaymentDates(i, j));
+
             } else {
 
-                scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
+
+                if (j < numberOfBondPayments) {
+
+                    scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
+
+                } else {
+
+                    // Pays (1-standStillPercentage) in the maturity shift periods
+                    
+                    scenarioBondPrice += (((1.0 - standStillPercentage) * parYieldRate / 2.0) *
+                            discountFactorAtPaymentDates(i, j));
+                    
+                }
 
             }
 

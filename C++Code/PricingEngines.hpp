@@ -44,7 +44,13 @@ public:
         return cocosTriggerLevel;
         
     }
-    
+
+    inline double getStandStillPercentage () {
+        
+        return standStillPercentage;
+        
+    }
+
     inline int getGracePeriodsInYears () {
         
         return gracePeriodsInYears;
@@ -87,6 +93,8 @@ private:
     
     double parYieldRate;
     double cocosTriggerLevel;
+
+    double standStillPercentage;
     
     string shortRateDataBaseName;
     string cdsDataBaseName;

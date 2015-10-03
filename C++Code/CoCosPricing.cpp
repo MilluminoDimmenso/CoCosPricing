@@ -75,7 +75,8 @@ int main(int argc, char** argv) {
     }
 
     outputFileStream << cocosPrice->getTriggerLevel() << "," << cocosPrice->getGracePeriodsInYears()
-            << "," << cocosPrice->getBurnInPeriodsInYears() << "," << cocosBondPrice << endl;
+            << "," << cocosPrice->getBurnInPeriodsInYears() << "," 
+                << cocosPrice->getStandStillPercentage () << "," << cocosBondPrice << endl;
 
     outputFileStream.close();
 
