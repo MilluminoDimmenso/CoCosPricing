@@ -26,9 +26,9 @@ foreach burnIn ( 0 )
             echo "BOND_MATURITY" >> InFiles/InputFileCurrentRun.in
             echo "20" >> InFiles/InputFileCurrentRun.in
             echo "SHORT_RATE_DATABASE_NAME" >> InFiles/InputFileCurrentRun.in
-            echo "COCOS_RATES_NOJUMPS" >> InFiles/InputFileCurrentRun.in
+            echo "COCOS_RATES" >> InFiles/InputFileCurrentRun.in
             echo "CDS_DATABASE_NAME" >> InFiles/InputFileCurrentRun.in
-            echo "COCOS_NOJUMPS" >> InFiles/InputFileCurrentRun.in
+            echo "COCOS" >> InFiles/InputFileCurrentRun.in
             echo "SPREAD_LOOK_BACK_DAYS" >> InFiles/InputFileCurrentRun.in
             echo "30" >> InFiles/InputFileCurrentRun.in
             echo "COCOS_TRIGGER_LEVEL" >> InFiles/InputFileCurrentRun.in
