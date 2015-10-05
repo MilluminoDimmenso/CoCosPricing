@@ -104,11 +104,11 @@ void cocosPricingEngine::readInputFile(string theInputString) {
             cout << "Burn-in periods (in years) : " << burnInPeriodsInYears << endl;
 
         } else if (dataRead == "STANDSTILL_PERCENTAGE") {
-            
+
             inputFileStream >> standStillPercentage;
 
-            cout << "Percentage of nominal paid during standstill : " << standStillPercentage << endl;            
-            
+            cout << "Percentage of nominal paid during standstill : " << standStillPercentage << endl;
+
         } else if (dataRead == "COUPON_FREQUENCY") {
 
             inputFileStream >> couponFrequency;
@@ -495,9 +495,9 @@ double cocosPricingEngine::pricingCocosBond() {
 
             if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel) {
 
-                cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
-
                 if (!flagCocosHitOnce) {
+
+                    cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
 
                     flagCocosHitOnce = 1;
 
@@ -507,9 +507,9 @@ double cocosPricingEngine::pricingCocosBond() {
 
                 } else {
 
-                    maturityShift += (couponFrequency);
+                    // maturityShift += (couponFrequency);
 
-                    // maturityShift += 0;
+                    maturityShift += 0;
 
                     if (maturityShift > 20) maturityShift = 20;
 
@@ -535,10 +535,10 @@ double cocosPricingEngine::pricingCocosBond() {
                 } else {
 
                     // Pays (1-standStillPercentage) in the maturity shift periods
-                    
+
                     scenarioBondPrice += (((1.0 - standStillPercentage) * parYieldRate / 2.0) *
                             discountFactorAtPaymentDates(i, j));
-                    
+
                 }
 
             }
