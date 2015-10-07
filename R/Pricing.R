@@ -70,10 +70,10 @@ CoCos <- dotplot(Scenario~CocosEvent,
 
 print(CoCos)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Multiple Trigger %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Discount vs Triggers %%%%%%%%%%%%%%%%%%%
   
-AA <- CoCosExperiments.JUMPS.SINGLETRIG
-BB <- CoCosExperiments.JUMPS.MULTIPLETRIGS
+AA <- CoCosExperiments.FIXED.NEW
+BB <- CoCosExperiments.FIXED.NEW
 
 AA$CoCos.Price <- (1.0 - AA$CoCos.Price)*100
 BB$CoCos.Price <- (1.0 - BB$CoCos.Price)*100
@@ -83,7 +83,7 @@ DD <- BB[(BB$Burn.In == 0) & (BB$Shift.Period == 3) & (BB$Standstill.Percentage 
 
 EE <- c(CC$Trigger.Level,DD$Trigger.Level)
 FF <- c(CC$CoCos.Price,DD$CoCos.Price)
-HH <- rep(c("Single","Multiple"), c(5,5))
+HH <- rep(c("Fixed","Fixed.New"), c(5,5))
 
 df <- data.frame(EE,FF,HH) 
 
@@ -98,7 +98,9 @@ my.setting <- list(superpose.polygon=list(col=c(my.colours[1],my.colours[4])),
                    strip.background=list(col=my.colours[1]),
                    strip.border=list(col="black"))
 
-barchart(Discounts~factor(Trigger.Levels), data=df, group=Type,
+# group=Type,
+
+barchart(Discounts~factor(Trigger.Levels), data=df,
          horizontal=FALSE,xlab="Trigger Levels", 
          auto.key=list(columns=2,points = FALSE, rectangles=TRUE, 
                        cex.title=1.0,border=FALSE,padding.text=2, adj=1),          
@@ -109,14 +111,71 @@ barchart(Discounts~factor(Trigger.Levels), data=df, group=Type,
 #key = simpleKey(c("Multiple","Single"),
 #                points=FALSE, lines =FALSE, rectangles = TRUE, columns = 2),
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%% Discount vs Trigger group by Standstill %%%%%%%%%%%%%%%%%%%
+require(lattice)
+
+require(RColorBrewer)
   
-TT_1 <- rep("A",10)
-TT_2 <- rep("B",10)
+LL <- CoCosExperiments.FIXED.NEW
+LL$CoCos.Price <- (1.0 - LL$CoCos.Price)*100
 
-YY_1 <- seq(1, 10, by=1)
-YY_2 <- seq(1, 10, by=1)
 
-KK_1 <- rep("C",10)
-KK_2 <- rep("C",10)
+my.colours <- brewer.pal(6,"Blues")  
 
+my.setting <- list(superpose.polygon=list(col=my.colours[1:6]),
+                   strip.background=list(col=my.colours[1]),
+                   strip.border=list(col="black"))
+
+# subset=Trigger.Level %in% c(300,400),
+
+barchart(CoCos.Price~factor(Trigger.Level), data=LL, group=Shift.Period,
+         horizontal=FALSE,xlab="Trigger Levels", subset=Trigger.Level %in% c(400),
+         auto.key=list( size = 4,corner = c(1, 1), x = 0.3, y = 1, columns=1,
+                        title="Standstill in years",points = FALSE, rectangles=TRUE, 
+                       cex.title=1.0,border=FALSE, padding.text=1, between= 0.2),          
+         ylab="Discount (in points)", 
+         origin=0,
+         par.settings = my.setting)
+
+%%%%%%%%%%%%%%%%%%%%%%% Fixed and Stochastic Standstill mechanism %%%%%%%%%%%%%%%%%%%
+
+require(lattice)
+require(RColorBrewer)
+
+LL <- CoCosExperiments.FIXED.STOCH
+LL$CoCos.Price.F.StandStill <- (1.0 - LL$CoCos.Price.F.StandStill)*100
+LL$CoCos.Price.S.StandStill <- (1.0 - LL$CoCos.Price.S.StandStill)*100
+
+HH <- LL[LL$Shift.Period==1, ]
+KK <- LL[LL$Shift.Period==3, ]
+YY <- LL[LL$Shift.Period==5, ]
+
+
+EE <- c(HH$Trigger.Level,KK$Trigger.Level,YY$Trigger.Level)
+FF <- c(HH$CoCos.Price.F.StandStill,KK$CoCos.Price.F.StandStill,YY$CoCos.Price.S.StandStill)
+HH <- rep(c("Fized-3y","Fixed-5y","Stochastic"), c(5,5,5))
+
+df <- data.frame(EE,FF,HH) 
+
+colnames(df)[1] <- "Trigger.Levels"
+colnames(df)[2] <- "Discounts"
+colnames(df)[3] <- "Type"
+
+my.colours <- brewer.pal(6,"Blues")  
+
+my.setting <- list(superpose.polygon=list(col=my.colours[1:6]),
+                   strip.background=list(col=my.colours[1]),
+                   strip.border=list(col="black"))
+
+barchart(Discounts~factor(Trigger.Levels), 
+         data=df, group=Type,
+         horizontal=FALSE,xlab="Trigger Levels",
+         auto.key=list( size = 4,corner = c(1, 1), x = 0.9, y = 0.9, columns=3,
+                        title="CoCos Mechanism",points = FALSE, rectangles=TRUE, 
+                        cex.title=1.0,border=FALSE, padding.text=2, between= 0.1),          
+         ylab="Discount (in points)", 
+         origin=0,
+         par.settings = my.setting)
+
+write.csv(file="FixedVsStochastic.csv",df)
+  

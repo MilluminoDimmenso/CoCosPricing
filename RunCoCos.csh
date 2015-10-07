@@ -11,7 +11,7 @@ endif
 # 
 # 
 
-echo "Trigger Level,Shift Period,Burn In,Standstill Percentage,CoCos Price" > /tmp/CoCosExperiments.csv
+echo "Trigger Level,Shift Period,Burn In,Standstill Percentage,CoCos Price F-StandStill,CoCos Price S-StandStill" > /tmp/CoCosExperiments.csv
 
 foreach burnIn ( 0 )
 

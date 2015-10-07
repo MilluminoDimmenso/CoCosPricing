@@ -71,7 +71,9 @@ public:
     
     double pricingPlainVanillaCouponBond();
     
-    double pricingCocosBond();
+    double priceCocosBondFixedStanstill();
+    
+    double priceCocosBondStochasticStandstill();
     
     // Database prototypes
 

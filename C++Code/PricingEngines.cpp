@@ -465,16 +465,95 @@ void cocosPricingEngine::queryCdsSpreads() {
 
 } // End queryInterestRates
 
-double cocosPricingEngine::pricingCocosBond() {
+double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
 
     double bondPrice;
     double scenarioBondPrice;
 
     int cocosGracePeriodCounter;
+    int standStillOnFlag;
 
-    int flagCocosHitOnce;
+    int maturityShift;
 
+    int i, j;
+
+    bondPrice = 0.0;
+
+    for (i = 0; i < numberOfScenarios; i++) {
+
+        standStillOnFlag = 0;
+
+        scenarioBondPrice = 0.0;
+
+        maturityShift = 0;
+
+        cocosGracePeriodCounter = 0;
+
+        for (j = 0; j < numberOfBondPayments; j++) {
+
+            if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel) {
+
+                if (!standStillOnFlag) {
+
+                    cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
+
+                    standStillOnFlag = 1;
+
+                    if (j >= (numberOfBondPayments - (gracePeriodsInYears * couponFrequency))) {
+
+                        //
+                        // If we breach the threshold (gracePeriodsInYears * couponFrequency)-periods
+                        // before maturity, we shift the principal payment of the number of periods
+                        // between (gracePeriodsInYears * couponFrequency) and (numberOfBondPayments - j).
+                        // Basically, if we breach the threshold in a window of periods which is smaller
+                        // than the number of periods before maturity, we postpone the
+                        // principal payment by a number of periods which is equal to this window.
+                        //
+
+                        maturityShift = (gracePeriodsInYears * couponFrequency) - (numberOfBondPayments - j) + 1;
+
+                    }
+
+                } // End if (!standStillOnFlag)
+
+            } // End if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel)
+
+            if (cocosGracePeriodCounter > 0) {
+
+                cocosGracePeriodCounter--;
+
+            } else {
+
+                scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
+
+                standStillOnFlag = 0;
+            }
+
+        } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
+
+        scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1));
+
+        bondPrice += scenarioBondPrice;
+
+    } // for (i = 0; i < numberOfScenarios; i++)
+
+
+    bondPrice /= numberOfScenarios;
+
+
+    return ( bondPrice);
+
+} // priceCocosBondFixedStanstill() ( )
+
+double cocosPricingEngine::priceCocosBondStochasticStandstill() {
+
+
+    double bondPrice;
+    double scenarioBondPrice;
+
+    int cocosGracePeriodCounter;
+    
     int maturityShift;
 
     int i, j;
@@ -485,33 +564,24 @@ double cocosPricingEngine::pricingCocosBond() {
 
         scenarioBondPrice = 0.0;
 
-        flagCocosHitOnce = 0;
-
         maturityShift = 0;
 
         cocosGracePeriodCounter = 0;
 
-        for (j = 0; j < (numberOfBondPayments + maturityShift); j++) {
+        for (j = 0; j < numberOfBondPayments; j++) {
 
             if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel) {
 
-                if (!flagCocosHitOnce) {
+                cocosGracePeriodCounter = 1;
 
-                    cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
+                if (j == (numberOfBondPayments - 1)) {
 
-                    flagCocosHitOnce = 1;
+                    //
+                    // If we breach the threshold at maturity, we forgive the interest payment
+                    // and we delay by one period the principal payment.
+                    //
 
-                    maturityShift += (gracePeriodsInYears * couponFrequency);
-
-                    if (maturityShift > 20) maturityShift = 20;
-
-                } else {
-
-                    // maturityShift += (couponFrequency);
-
-                    maturityShift += 0;
-
-                    if (maturityShift > 20) maturityShift = 20;
+                    maturityShift = 1;
 
                 }
 
@@ -521,26 +591,9 @@ double cocosPricingEngine::pricingCocosBond() {
 
                 cocosGracePeriodCounter--;
 
-                // During the standstill keep paying standStillPercentage of the nominal 
-
-                scenarioBondPrice += (((standStillPercentage * parYieldRate) / 2.0) * discountFactorAtPaymentDates(i, j));
-
             } else {
 
-
-                if (j < numberOfBondPayments) {
-
-                    scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
-
-                } else {
-
-                    // Pays (1-standStillPercentage) in the maturity shift periods
-
-                    scenarioBondPrice += (((1.0 - standStillPercentage) * parYieldRate / 2.0) *
-                            discountFactorAtPaymentDates(i, j));
-
-                }
-
+                scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
             }
 
         } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
