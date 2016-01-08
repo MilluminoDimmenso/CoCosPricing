@@ -91,6 +91,12 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
             cout << "Cocos trigger level: " << cocosTriggerLevel << endl;
 
+        } else if (dataRead == "DEFAULT_TRIGGER_LEVEL") {
+
+            inputFileStream >> defaultTriggerLevel;
+
+            cout << "Default trigger level : " << defaultTriggerLevel << endl;
+
         } else if (dataRead == "GRACE_PERIODS_IN_YEARS") {
 
             inputFileStream >> gracePeriodsInYears;
@@ -200,12 +206,15 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
     discountFactorAtPaymentDates.resize(numberOfScenarios, numberOfPaymentPeriods);
 
-    discountFactorAtPaymentDates = -1.0;
+    discountFactorAtPaymentDates = -100.0;
 
     averageLookBackSpreadAtPaymentDates.resize(numberOfScenarios, numberOfPaymentPeriods);
 
-    averageLookBackSpreadAtPaymentDates = -1.0;
+    averageLookBackSpreadAtPaymentDates = -100.0;
 
+    cashFlowAtPaymentDates.resize(numberOfScenarios, numberOfPaymentPeriods);
+
+    cashFlowAtPaymentDates = 0.0;
 
 } // End readInputFile
 
@@ -341,6 +350,22 @@ void cocosPricingEngine::queryInterestRates() {
 
     parYieldRate = 2.0 * ((1.0 - ZZ(0, numberOfBondPayments - 1)) / sumOfRates);
 
+    cashFlowAtPaymentDates(Range::all(), Range(0, numberOfBondPayments - 1)) = (parYieldRate / 2.0);
+
+    cashFlowAtPaymentDates(Range::all(), numberOfBondPayments - 1) += 1.0;
+
+    // TO BE DELETED
+
+    // parYieldRate = 0.0650269;
+
+    // parYieldRate = 0.055;
+
+    // parYieldRate = 0.045;
+
+    // parYieldRate = 0.0664466;
+
+    // TO BE DELETED
+
     cout << "Par yield rate: " << parYieldRate << endl;
 
 } // End queryInterestRates
@@ -463,10 +488,12 @@ void cocosPricingEngine::queryCdsSpreads() {
 
     this->writeDataForDotPlot("/tmp/CocosTriggeringTime.csv", averageLookBackSpreadAtPaymentDates);
 
-} // End queryInterestRates
+} // End queryCdsSpreads
 
 double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
+
+    ofstream outputFileStream;
 
     double bondPrice;
     double scenarioBondPrice;
@@ -477,6 +504,18 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
     int maturityShift;
 
     int i, j;
+
+
+    outputFileStream.open("/tmp/CocosBondPrices.csv");
+
+    if (!outputFileStream) {
+
+        cout << "Couldn't open file /tmp/CocosBondPrices.csv\n";
+        exit(0);
+
+    }
+
+    outputFileStream << "Scenario,Price\n";
 
     bondPrice = 0.0;
 
@@ -513,6 +552,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                         maturityShift = (gracePeriodsInYears * couponFrequency) - (numberOfBondPayments - j) + 1;
 
+                        cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0;
+
                     }
 
                 } // End if (!standStillOnFlag)
@@ -522,6 +563,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
             if (cocosGracePeriodCounter > 0) {
 
                 cocosGracePeriodCounter--;
+
+                cashFlowAtPaymentDates(i, j) = 0.0;
 
             } else {
 
@@ -534,6 +577,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
         scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1));
 
+        outputFileStream << i + 1 << "," << scenarioBondPrice << endl;
+
         bondPrice += scenarioBondPrice;
 
     } // for (i = 0; i < numberOfScenarios; i++)
@@ -541,6 +586,10 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
     bondPrice /= numberOfScenarios;
 
+    // cout << cashFlowAtPaymentDates << endl;
+
+
+    outputFileStream.close();
 
     return ( bondPrice);
 
@@ -553,7 +602,7 @@ double cocosPricingEngine::priceCocosBondStochasticStandstill() {
     double scenarioBondPrice;
 
     int cocosGracePeriodCounter;
-    
+
     int maturityShift;
 
     int i, j;
@@ -646,6 +695,82 @@ double cocosPricingEngine::pricingPlainVanillaCouponBond() {
     return ( bondPrice);
 
 } // pricingPlainVanillaCouponBond ( )
+
+double cocosPricingEngine::priceDefaultableBond() {
+
+
+    //
+    // We are basically assuming that the interest rate process is the
+    // risk free rate.
+    //
+
+    ofstream outputFileStream;
+
+    double bondPrice;
+    double scenarioBondPrice;
+
+    int flagDefault;
+    
+    int i, j;
+
+
+    outputFileStream.open("/tmp/DefaulableBondPrices.csv");
+
+    if (!outputFileStream) {
+
+        cout << "Couldn't open file /tmp/DefaulableBondPrices.csv\n";
+        exit(0);
+
+    }
+
+
+    outputFileStream << "Scenario,Price\n";
+
+    bondPrice = 0.0;
+
+    for (i = 0; i < numberOfScenarios; i++) {
+
+        scenarioBondPrice = 0.0;
+
+        flagDefault = 0;
+
+        for (j = 0; j < numberOfBondPayments; j++) {
+
+            if (averageLookBackSpreadAtPaymentDates(i, j) >= defaultTriggerLevel) {
+
+                // If a default event occurs, pays 50% of principal and exit
+
+                scenarioBondPrice += 0.5 * discountFactorAtPaymentDates(i, j);
+
+                flagDefault = 1;
+
+                break;
+
+            } // End if (averageLookBackSpreadAtPaymentDates(i, j) >= cocosTriggerLevel)
+
+            scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
+
+        } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
+
+        if (!flagDefault) {
+
+            scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments) - 1));
+
+        }
+
+        outputFileStream << i + 1 << "," << scenarioBondPrice << endl;
+
+        bondPrice += scenarioBondPrice;
+
+    } // for (i = 0; i < numberOfScenarios; i++)
+
+    bondPrice /= numberOfScenarios;
+
+    outputFileStream.close();
+
+    return ( bondPrice);
+
+} // priceDefaultableBond() ( )
 
 double cocosPricingEngine::queryLookBackAverageSpread(int recordIdAtPaymentDate) {
 

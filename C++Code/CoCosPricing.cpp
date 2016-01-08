@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     double plainVanillaBondPrice;
     double cocosBondPriceFixedStandstill;
     double cocosBondPriceStochasticStandstill;
-
+    double defaultableBondPrice;
 
     cocosPricingEngine *cocosPrice = new cocosPricingEngine [1];
 
@@ -69,6 +69,9 @@ int main(int argc, char** argv) {
 
     cout.flush() << "Cocos bond price (stochastic standstill): " << cocosBondPriceStochasticStandstill << endl;
 
+    defaultableBondPrice = cocosPrice->priceDefaultableBond();
+
+    cout.flush() << "Defaultable bond price: " << defaultableBondPrice << endl;
 
     outputFileStream.open("/tmp/CurrentCoCosResults.csv");
 
@@ -81,8 +84,10 @@ int main(int argc, char** argv) {
 
     outputFileStream << cocosPrice->getTriggerLevel() << "," << cocosPrice->getGracePeriodsInYears()
             << "," << cocosPrice->getBurnInPeriodsInYears() << ","
-            << cocosPrice->getStandStillPercentage() << "," << cocosBondPriceFixedStandstill << "," 
-            << cocosBondPriceStochasticStandstill << endl;
+            << cocosPrice->getStandStillPercentage() << "," << cocosBondPriceFixedStandstill << ","
+            << cocosBondPriceStochasticStandstill << ","
+            << defaultableBondPrice
+            << endl;
 
     outputFileStream.close();
 

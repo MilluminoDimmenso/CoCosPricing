@@ -75,6 +75,8 @@ public:
     
     double priceCocosBondStochasticStandstill();
     
+    double priceDefaultableBond();
+    
     // Database prototypes
 
     void queryInterestRates();
@@ -90,11 +92,13 @@ private:
 
     MYSQL dataBaseHandler;
 
+    Array<double, 2> cashFlowAtPaymentDates;
     Array<double, 2> discountFactorAtPaymentDates;
     Array<double, 2> averageLookBackSpreadAtPaymentDates;
     
     double parYieldRate;
     double cocosTriggerLevel;
+    double defaultTriggerLevel;
 
     double standStillPercentage;
     
