@@ -350,9 +350,6 @@ void cocosPricingEngine::queryInterestRates() {
 
     parYieldRate = 2.0 * ((1.0 - ZZ(0, numberOfBondPayments - 1)) / sumOfRates);
 
-    cashFlowAtPaymentDates(Range::all(), Range(0, numberOfBondPayments - 1)) = (parYieldRate / 2.0);
-
-    cashFlowAtPaymentDates(Range::all(), numberOfBondPayments - 1) += 1.0;
 
     // TO BE DELETED
 
@@ -552,8 +549,6 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                         maturityShift = (gracePeriodsInYears * couponFrequency) - (numberOfBondPayments - j) + 1;
 
-                        cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0;
-
                     }
 
                 } // End if (!standStillOnFlag)
@@ -570,10 +565,30 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                 scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
 
+                cashFlowAtPaymentDates(i, j) = (parYieldRate / 2.0);
+
                 standStillOnFlag = 0;
             }
 
-        } // for (j = 0; j < (numberOfBondPayments + maturityShift); j++)
+        } // for (j = 0; j < numberOfBondPayments; j++)
+
+        if (!maturityShift) {
+
+            //
+            // In case maturityShift = 0, the final payment due is the principal plus the coupon: 1+c
+            //
+
+            cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0 + (parYieldRate / 2.0);
+
+        } else {
+
+            //
+            // In case maturityShift <> 0, the only payment due is the principal
+            //
+            
+            cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0;
+
+        }
 
         scenarioBondPrice += (discountFactorAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1));
 
@@ -586,8 +601,7 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
     bondPrice /= numberOfScenarios;
 
-    // cout << cashFlowAtPaymentDates << endl;
-
+    this->writeDataInCSVFormat("/tmp/CashFlows.csv", cashFlowAtPaymentDates);
 
     outputFileStream.close();
 
@@ -710,7 +724,7 @@ double cocosPricingEngine::priceDefaultableBond() {
     double scenarioBondPrice;
 
     int flagDefault;
-    
+
     int i, j;
 
 
