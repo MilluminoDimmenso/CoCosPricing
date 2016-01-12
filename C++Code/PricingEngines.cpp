@@ -350,7 +350,6 @@ void cocosPricingEngine::queryInterestRates() {
 
     parYieldRate = 2.0 * ((1.0 - ZZ(0, numberOfBondPayments - 1)) / sumOfRates);
 
-
     // TO BE DELETED
 
     // parYieldRate = 0.0650269;
