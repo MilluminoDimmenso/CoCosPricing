@@ -216,6 +216,10 @@ void cocosPricingEngine::readInputFile(string theInputString) {
 
     cashFlowAtPaymentDates = 0.0;
 
+    triggedSpreadLevels.resize(numberOfScenarios, numberOfPaymentPeriods);
+
+    triggedSpreadLevels = -100.0;
+
 } // End readInputFile
 
 void cocosPricingEngine::queryInterestRates() {
@@ -494,12 +498,14 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
     double bondPrice;
     double scenarioBondPrice;
 
+    double currentTriggeringSpread;
+
     int cocosGracePeriodCounter;
     int standStillOnFlag;
 
     int maturityShift;
 
-    int i, j;
+    int i, j, k;
 
 
     outputFileStream.open("/tmp/CocosBondPrices.csv");
@@ -531,6 +537,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                 if (!standStillOnFlag) {
 
+                    currentTriggeringSpread = averageLookBackSpreadAtPaymentDates(i, j);
+
                     cocosGracePeriodCounter = gracePeriodsInYears * couponFrequency;
 
                     standStillOnFlag = 1;
@@ -560,6 +568,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                 cashFlowAtPaymentDates(i, j) = 0.0;
 
+                triggedSpreadLevels(i, j) = currentTriggeringSpread;
+
             } else {
 
                 scenarioBondPrice += ((parYieldRate / 2.0) * discountFactorAtPaymentDates(i, j));
@@ -579,13 +589,28 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
             cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0 + (parYieldRate / 2.0);
 
+
         } else {
 
             //
             // In case maturityShift <> 0, the only payment due is the principal
             //
-            
+
             cashFlowAtPaymentDates(i, (numberOfBondPayments + maturityShift) - 1) = 1.0;
+
+
+            //
+            // We also need to fill triggedSpreadLevels 
+            // equal to the cds level which cause the maturity shift
+            // The elements to be filled with currentTriggeringSpread go
+            // from the maturity until the end of the shift
+            //
+
+            for (k = numberOfBondPayments - 1; k < (numberOfBondPayments + maturityShift); k++) {
+                
+                triggedSpreadLevels(i, k) = currentTriggeringSpread;
+                                
+            } // End for (k = numberOfBondPayments - 1; k < (numberOfBondPayments + maturityShift); k++)
 
         }
 
@@ -601,6 +626,10 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
     bondPrice /= numberOfScenarios;
 
     this->writeDataInCSVFormat("/tmp/CashFlows.csv", cashFlowAtPaymentDates);
+    this->writeDataInCSVFormat("/tmp/Discounts.csv", discountFactorAtPaymentDates);
+    this->writeDataInCSVFormat("/tmp/CDS.csv", averageLookBackSpreadAtPaymentDates);
+    this->writeDataInCSVFormat("/tmp/TriggeredSpreadLevels.csv", triggedSpreadLevels);
+
 
     outputFileStream.close();
 

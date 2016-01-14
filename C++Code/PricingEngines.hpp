@@ -93,6 +93,7 @@ private:
     MYSQL dataBaseHandler;
 
     Array<double, 2> cashFlowAtPaymentDates;
+    Array<double, 2> triggedSpreadLevels;
     Array<double, 2> discountFactorAtPaymentDates;
     Array<double, 2> averageLookBackSpreadAtPaymentDates;
     
