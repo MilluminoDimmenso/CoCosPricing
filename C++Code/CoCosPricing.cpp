@@ -63,7 +63,8 @@ int main(int argc, char** argv) {
 
     cocosBondPriceFixedStandstill = cocosPrice->priceCocosBondFixedStanstill();
 
-    cout.flush() << "Cocos bond price (fixed standstill): " << cocosBondPriceFixedStandstill << endl;
+    cout.flush() << "Cocos bond price (fixed standstill): " << cocosBondPriceFixedStandstill << " Max maturity shift: "
+            << cocosPrice->getMaxMaturityShift() << endl;
 
     cocosBondPriceStochasticStandstill = cocosPrice->priceCocosBondStochasticStandstill();
 
