@@ -521,6 +521,9 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
     bondPrice = 0.0;
 
+    maxMaturityShift = 0;
+    
+    
     for (i = 0; i < numberOfScenarios; i++) {
 
         standStillOnFlag = 0;
@@ -556,6 +559,14 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                         maturityShift = (gracePeriodsInYears * couponFrequency) - (numberOfBondPayments - j) + 1;
 
+                        if ( maturityShift > maxMaturityShift ) {
+                            
+                            
+                            maxMaturityShift = maturityShift;
+                            
+                            
+                        }
+                                                
                     }
 
                 } // End if (!standStillOnFlag)

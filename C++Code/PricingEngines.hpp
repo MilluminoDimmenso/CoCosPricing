@@ -38,56 +38,61 @@ public:
     inline ~cocosPricingEngine() {
     };
 
+    inline int getMaxMaturityShift() {
 
-    inline double getTriggerLevel () {
-        
+        return maxMaturityShift;
+
+    }
+
+    inline double getTriggerLevel() {
+
         return cocosTriggerLevel;
-        
+
     }
 
-    inline double getStandStillPercentage () {
-        
+    inline double getStandStillPercentage() {
+
         return standStillPercentage;
-        
+
     }
 
-    inline int getGracePeriodsInYears () {
-        
+    inline int getGracePeriodsInYears() {
+
         return gracePeriodsInYears;
-        
+
     }
-    
-    inline int getBurnInPeriodsInYears () {
-        
+
+    inline int getBurnInPeriodsInYears() {
+
         return burnInPeriodsInYears;
-        
+
     }
-    
+
     void readInputFile(string theInputString);
 
     void writeDataInCSVFormat(string gamsFileName, const Array<double, 2 > &dataMatrix);
-    
+
     void writeDataForDotPlot(string gamsFileName, const Array<double, 2 > &dataMatrix);
-    
+
     double pricingPlainVanillaCouponBond();
-    
+
     double priceCocosBondFixedStanstill();
-    
+
     double priceCocosBondStochasticStandstill();
-    
+
     double priceDefaultableBond();
-    
+
     // Database prototypes
 
     void queryInterestRates();
-    
+
     void queryCdsSpreads();
-    
+
     void loadDataFromFile(string theResultsFileName);
 
-    double queryLookBackAverageSpread ( int recordIdAtPaymentDate );
-    
-    
+    double queryLookBackAverageSpread(int recordIdAtPaymentDate);
+
+
 private:
 
     MYSQL dataBaseHandler;
@@ -96,16 +101,19 @@ private:
     Array<double, 2> triggedSpreadLevels;
     Array<double, 2> discountFactorAtPaymentDates;
     Array<double, 2> averageLookBackSpreadAtPaymentDates;
-    
+
     double parYieldRate;
     double cocosTriggerLevel;
     double defaultTriggerLevel;
 
-    double standStillPercentage;
     
+    double standStillPercentage;
+
     string shortRateDataBaseName;
     string cdsDataBaseName;
 
+    int maxMaturityShift;
+    
     int numberOfScenarios;
 
     int bondMaturity;
@@ -117,11 +125,11 @@ private:
     int numberOfBondPayments;
 
     int numberOfPaymentPeriods;
-    
+
     int daysBetweenPaymentPeriods;
-    
+
     int gracePeriodsInYears;
-    
+
     int burnInPeriodsInYears;
 
 }; // End cocosPricingEngine
