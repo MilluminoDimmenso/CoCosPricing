@@ -92,6 +92,17 @@ public:
 
     double queryLookBackAverageSpread(int recordIdAtPaymentDate);
 
+    // Least square Montecarlo prototypes
+
+    void leastSquareRegression(int currentTime, const Array <double, 2> &theStandardLogRates, 
+        Array <double, 2> &regressionBetas);
+
+    void computeStandardizedLogRates(Array <double, 2> &theLogRates);
+
+    void computeBasisRegressors(const Array<double, 1 > &theVariable, Array <double, 2> &theBasisRegressors);
+
+    void computeResponceVariable(int theCurrentTime, const Array <double, 2> &theRegressionBetas,
+            Array <double, 1> &theResponceVariable);
 
 private:
 
@@ -106,15 +117,17 @@ private:
     double cocosTriggerLevel;
     double defaultTriggerLevel;
 
-    
+
     double standStillPercentage;
 
     string shortRateDataBaseName;
     string cdsDataBaseName;
 
-    int maxMaturityShift;
-    
+    int numberOfBasisFunctions;
+
     int numberOfScenarios;
+
+    int maxMaturityShift;
 
     int bondMaturity;
 

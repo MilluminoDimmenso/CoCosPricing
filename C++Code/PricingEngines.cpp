@@ -19,6 +19,18 @@
 #include <blitz/array.h>
 #include <blitz/range.h>
 
+
+// For statistics
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/moment.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+
+
+using namespace boost::accumulators;
 using namespace std;
 using namespace blitz;
 
@@ -336,7 +348,7 @@ void cocosPricingEngine::queryInterestRates() {
     firstIndex H;
     secondIndex G;
 
-    ZZ(0, Range::all()) = mean(discountFactorAtPaymentDates(G, H), G);
+    ZZ(0, Range::all()) = blitz::mean(discountFactorAtPaymentDates(G, H), G);
     ZZ(1, Range::all()) = discountFactorAtPaymentDates(22, Range::all());
     ZZ(2, Range::all()) = discountFactorAtPaymentDates(2, Range::all());
     ZZ(3, Range::all()) = discountFactorAtPaymentDates(13, Range::all());
@@ -522,8 +534,8 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
     bondPrice = 0.0;
 
     maxMaturityShift = 0;
-    
-    
+
+
     for (i = 0; i < numberOfScenarios; i++) {
 
         standStillOnFlag = 0;
@@ -559,14 +571,14 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
 
                         maturityShift = (gracePeriodsInYears * couponFrequency) - (numberOfBondPayments - j) + 1;
 
-                        if ( maturityShift > maxMaturityShift ) {
-                            
-                            
+                        if (maturityShift > maxMaturityShift) {
+
+
                             maxMaturityShift = maturityShift;
-                            
-                            
+
+
                         }
-                                                
+
                     }
 
                 } // End if (!standStillOnFlag)
@@ -618,9 +630,9 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
             //
 
             for (k = numberOfBondPayments - 1; k < (numberOfBondPayments + maturityShift); k++) {
-                
+
                 triggedSpreadLevels(i, k) = currentTriggeringSpread;
-                                
+
             } // End for (k = numberOfBondPayments - 1; k < (numberOfBondPayments + maturityShift); k++)
 
         }
@@ -641,6 +653,30 @@ double cocosPricingEngine::priceCocosBondFixedStanstill() {
     this->writeDataInCSVFormat("/tmp/CDS.csv", averageLookBackSpreadAtPaymentDates);
     this->writeDataInCSVFormat("/tmp/TriggeredSpreadLevels.csv", triggedSpreadLevels);
 
+    Array <double, 2> standardLogRates;
+
+    Array <double, 2> regressionBetas;
+
+    //
+    // The number of regression betas ((2 * numberOfBasisFunctions)) depend on the
+    // variables we are using to approximate the expected value.
+    // In this case, these variables are two: the interest rate and cds spread
+    //
+
+    regressionBetas.resize(numberOfBondPayments - 1, (2 * numberOfBasisFunctions));
+
+    regressionBetas = 0.0;
+
+
+    // Compute the log rates and standardize them
+
+    standardLogRates.resize(numberOfScenarios, numberOfBondPayments - 1);
+
+    computeStandardizedLogRates(standardLogRates);
+
+    this->writeDataInCSVFormat("/tmp/Standard.csv", standardLogRates);
+
+    leastSquareRegression((numberOfBondPayments + maxMaturityShift) - 2, standardLogRates, regressionBetas);
 
     outputFileStream.close();
 
@@ -986,3 +1022,133 @@ void cocosPricingEngine::writeDataForDotPlot(string gamsFileName, const Array<do
 
 } // End  writeDataInCSVFormat  ( )
 
+void cocosPricingEngine::leastSquareRegression(int currentTime, const Array <double, 2> &theStandardLogRates,
+        Array <double, 2> &regressionBetas) {
+
+    Array <double, 1> logRates;
+    Array <double, 1> responceVariable;
+    Array <double, 2> basisRegressorsIR;
+    Array <double, 2> basisRegressorsCDS;
+
+
+    // 1 basis is constant function, 2 is linear, 3 is quadratic and so on
+
+    numberOfBasisFunctions = 3;
+
+    logRates.resize(numberOfScenarios);
+    responceVariable.resize(numberOfScenarios);
+
+    basisRegressorsIR.resize(numberOfScenarios, numberOfBasisFunctions);
+    basisRegressorsCDS.resize(numberOfScenarios, numberOfBasisFunctions);
+
+
+    // Compute basis regressors for interest rates
+
+    computeBasisRegressors(logRates, basisRegressorsIR);
+
+    // Compute basis regressors for CDS spreads
+
+    // computeBasisRegressors(triggedSpreadLevels(Range::all(), currentTime), basisRegressorsCDS);
+
+
+    computeResponceVariable(currentTime, regressionBetas, responceVariable);
+
+    // computeRegressionCoefficients(currentTime,);
+
+
+} // End leastSquareRegression
+
+void cocosPricingEngine::computeStandardizedLogRates(Array <double, 2> &theLogRates) {
+
+    int i, j;
+
+    for (i = 0; i < theLogRates.rows(); i++) {
+
+        for (j = 0; j < theLogRates.cols(); j++) {
+
+            theLogRates(i) = -log(discountFactorAtPaymentDates(i, j + 1) / discountFactorAtPaymentDates(i, j));
+
+        } // End for (j = 0; j <theLogRates.ncols(); j ++ )
+
+    } // End for (i = 0; i < theLogRates.nrows(); i++)
+
+} // End computeLogRates
+
+void cocosPricingEngine::computeBasisRegressors(const Array<double, 1 > &theVariable, Array <double, 2> &theBasisRegressors) {
+
+    //
+    // First of all, we standardize variates to 
+    // avoid numerical instability
+    //
+
+    // Compute mean and standard deviation through accumulators
+
+    double mean, standardDeviation, standardizedItem;
+
+    int i, j;
+
+    accumulator_set<double, stats<tag::mean > > firstAccumulator;
+    accumulator_set<double, stats<tag::variance > > secondAccumulator;
+
+    for (i = 0; i < theVariable.rows(); i++) {
+
+        firstAccumulator(theVariable(i));
+        secondAccumulator(theVariable(i));
+
+    }
+
+    mean = boost::accumulators::mean(firstAccumulator);
+    standardDeviation = sqrt(boost::accumulators::variance(secondAccumulator));
+
+    for (i = 0; i < theVariable.rows(); i++) {
+
+        standardizedItem = (theVariable(i) - mean) / standardDeviation;
+
+        for (j = 0; j < theBasisRegressors.cols(); j++) {
+
+            // Basis functions can be power, or other functionals
+
+            theBasisRegressors(i, j) = pow(standardizedItem, j);
+
+        } // End for ( j = 0; j < theBasisRegressors.cols(); j ++ )
+
+    } // End for (i = 0; i < theVariable.rows(); i++)
+
+} // End computeBasisRegressors ()
+
+void cocosPricingEngine::computeResponceVariable(int theCurrentTime,
+        const Array <double, 2> &theRegressionBetas, Array <double, 1> &theResponceVariable) {
+
+
+    double xx;
+
+    int i;
+
+    if ((theCurrentTime + 1) == ((numberOfBondPayments + maxMaturityShift) - 1)) {
+
+        // This is the last period and the expected value of the bond price is 0
+        // since it is expired at maturity
+
+
+        for (i = 0; i < theResponceVariable.rows(); i++) {
+
+
+            // theResponceVariable(i) = cashFlowAtPaymentDates(i, (theCurrentTime + 1)) *;
+
+        } // End for ( i = 0; i < theResponceVariable.rows(); i ++)
+
+    } else {
+
+
+    }
+
+
+
+
+
+} // End computeResponceVariable( )
+
+//double cocosPricingEngine::approximateExpectedValue(const Array<double, 1> &theCurrentBetas,) {
+//
+//
+//} 
