@@ -1062,15 +1062,16 @@ void cocosPricingEngine::computeStandardizedLogRates(Array <double, 2> &theLogRa
 
     int i, j;
 
-    for (i = 0; i < theLogRates.rows(); i++) {
+    
+    for (j = 0; j < theLogRates.cols(); j++) {
 
-        for (j = 0; j < theLogRates.cols(); j++) {
+        for (i = 0; i < theLogRates.rows(); i++) {
 
-            theLogRates(i) = -log(discountFactorAtPaymentDates(i, j + 1) / discountFactorAtPaymentDates(i, j));
+            theLogRates(i,j) = -log(discountFactorAtPaymentDates(i, j + 1) / discountFactorAtPaymentDates(i, j));
 
-        } // End for (j = 0; j <theLogRates.ncols(); j ++ )
-
-    } // End for (i = 0; i < theLogRates.nrows(); i++)
+        } // End for (i = 0; i < theLogRates.nrows(); i++)
+        
+    } // End for (j = 0; j <theLogRates.ncols(); j ++ )
 
 } // End computeLogRates
 
